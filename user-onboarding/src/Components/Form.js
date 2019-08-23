@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Form, Field, withFormik } from "formik"; // a library to make making forms easier
 import * as Yup from "yup"; // for validation
@@ -10,7 +10,15 @@ import * as Yup from "yup"; // for validation
 
 // Yup and Formik work hand-in-hand
 
-const onBoardForm = ({errors, touched, values}) => {
+const OnBoardForm = ({errors, touched, values, status}) => {
+    const [users, setUsers] = useState([]);
+
+    // tbh this and the return statement for the .map I just copied and pasted, too tired to dig too deeply into this tonight
+    useEffect(() => {
+        if (status) {
+          setUsers([...users, status]);
+        }
+      }, [status]);
 
     return(
         <div>
@@ -36,8 +44,17 @@ const onBoardForm = ({errors, touched, values}) => {
                 
                 <Field name='TOS' type='checkbox' checked={values.TOS} />
                 <span>DO YOU AGREE?</span>
+                {touched.TOS && errors.TOS && (<p>{errors.TOS}</p>)}
                 <button>Submit. Or don't. Do you.</button>
             </Form>
+
+                {users.map(user => (
+                    <ul key={user.id}>
+                    <li>name: {user.name}</li>
+                    <li>email: {user.email}</li>
+                    <li>password: {user.password}</li>
+                    </ul>
+                ))}
         </div>
     );
 };
@@ -65,6 +82,8 @@ const FormikOnBoardForm = withFormik({
         name: Yup.string().required('this is an error message. YOU ARE IN ERROR'),
         email: Yup.string().required('this is an error message. YOU ARE IN ERROR'),
         password: Yup.string().required('this is an error message. YOU ARE IN ERROR'),
+        TOS: Yup.boolean().oneOf([true], 'BE TRUE').required('this is an error message. YOU ARE IN ERROR'),
+
     }),
 
     // another Formik function. This is where we make our axios call
@@ -74,12 +93,13 @@ const FormikOnBoardForm = withFormik({
         axios
         .post('https://reqres.in/api/users', values)
         .then(response => {
-            console.log(response);
+            console.log(response.data);
+            setStatus(response.data);
         })
     }
 
 
-})(onBoardForm);  // this part of withFormik is what makes this a "higher order component" (or a higher order function, since components are simply functions)
+})(OnBoardForm);  // this part of withFormik is what makes this a "higher order component" (or a higher order function, since components are simply functions)
                   // it takes a funtion as it's arguments, which is 'curried' and only fired later, after the prior logic in the first part of the function
                   // has been worked through (I presume)
 export default FormikOnBoardForm;
